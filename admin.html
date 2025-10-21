@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการ - ตี๋รีสอร์ท</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        body { font-family: 'Kanit', sans-serif; }
+        .modal-backdrop { background-color: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+
+    <!-- Admin Login Screen -->
+    <div id="admin-login-screen" class="min-h-screen flex items-center justify-center bg-gray-900">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-center text-amber-400 mb-6">Admin Login</h2>
+            <div id="login-error" class="text-red-400 mb-4 hidden"></div>
+            <form id="admin-login-form">
+                <div class="mb-4">
+                    <label for="admin-email" class="block mb-2 text-sm font-medium">อีเมล</label>
+                    <input type="email" id="admin-email" value="admin@resort.com" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" required>
+                </div>
+                <div class="mb-6">
+                    <label for="admin-password" class="block mb-2 text-sm font-medium">รหัสผ่าน</label>
+                    <input type="password" id="admin-password" value="password123" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5" required>
+                </div>
+                <button type="submit" class="w-full text-gray-900 bg-amber-500 hover:bg-amber-600 focus:ring-4 focus:outline-none focus:ring-amber-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">เข้าสู่ระบบ</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Admin Dashboard (Hidden by default) -->
+    <div id="admin-dashboard" class="hidden">
+        <div class="flex h-screen bg-gray-900">
+            <!-- Sidebar -->
+            <div class="w-64 bg-gray-800 flex-shrink-0">
+                <div class="flex items-center justify-center h-20 border-b border-gray-700">
+                    <h1 class="text-2xl font-bold text-amber-400">ตี๋รีสอร์ท</h1>
+                </div>
+                <nav class="mt-10">
+                    <a href="#" onclick="switchView('dashboard')" class="flex items-center py-3 px-6 text-gray-300 bg-gray-700/50">
+                        <i data-feather="grid" class="w-5 h-5"></i><span class="ml-4">Dashboard</span>
+                    </a>
+                    <a href="#" onclick="switchView('bookings')" class="flex items-center py-3 px-6 text-gray-400 hover:bg-gray-700/50">
+                        <i data-feather="book-open" class="w-5 h-5"></i><span class="ml-4">การจองทั้งหมด</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+                <header class="flex justify-between items-center p-6 bg-gray-800 border-b border-gray-700">
+                    <h2 id="view-title" class="text-xl font-semibold">Dashboard</h2>
+                    <button onclick="adminLogout()" class="flex items-center text-red-400 hover:text-red-300">
+                        <i data-feather="log-out" class="w-5 h-5 mr-2"></i> ออกจากระบบ
+                    </button>
+                </header>
+
+                <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-6">
+                    <!-- Dashboard View -->
+                    <div id="dashboard-view">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                                <h4 class="text-gray-400 text-sm font-medium">การจองใหม่ (24ชม.)</h4>
+                                <p id="stat-new-bookings" class="text-3xl font-bold mt-2">0</p>
+                            </div>
+                            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                                <h4 class="text-gray-400 text-sm font-medium">เช็คอินวันนี้</h4>
+                                <p id="stat-checkins-today" class="text-3xl font-bold mt-2">0</p>
+                            </div>
+                            <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                                <h4 class="text-gray-400 text-sm font-medium">การจองทั้งหมด</h4>
+                                <p id="stat-total-bookings" class="text-3xl font-bold mt-2">0</p>
+                            </div>
+                             <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                                <h4 class="text-gray-400 text-sm font-medium">รายได้โดยประมาณ</h4>
+                                <p id="stat-total-revenue" class="text-3xl font-bold mt-2">฿0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bookings View -->
+                    <div id="bookings-view" class="hidden">
+                        <div class="bg-gray-800 rounded-lg shadow-lg overflow-hidden">
+                            <table class="w-full text-sm text-left text-gray-400">
+                                <thead class="text-xs text-gray-300 uppercase bg-gray-700">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3">Booking ID</th>
+                                        <th scope="col" class="px-6 py-3">อีเมลลูกค้า</th>
+                                        <th scope="col" class="px-6 py-3">ห้องพัก</th>
+                                        <th scope="col" class="px-6 py-3">Check-in / out</th>
+                                        <th scope="col" class="px-6 py-3">ยอดชำระ</th>
+                                        <th scope="col" class="px-6 py-3">สถานะ</th>
+                                        <th scope="col" class="px-6 py-3">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bookings-table-body">
+                                    <!-- Data will be populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Management Modal -->
+    <div id="manageBookingModal" class="fixed inset-0 z-50 hidden items-center justify-center modal-backdrop">
+        <div class="bg-gray-800 rounded-lg shadow-xl w-full max-w-lg m-4">
+            <div class="p-6">
+                <h3 class="text-2xl font-bold mb-4">จัดการการจอง ID: <span id="modal-booking-id"></span></h3>
+                <input type="hidden" id="modal-current-booking-id">
+                <div class="space-y-4">
+                    <p><strong class="text-gray-400">ลูกค้า:</strong> <span id="modal-customer-email"></span></p>
+                    <p><strong class="text-gray-400">ห้องพัก:</strong> <span id="modal-room-name"></span></p>
+                    <p><strong class="text-gray-400">วันที่:</strong> <span id="modal-dates"></span></p>
+                    <div>
+                        <label for="booking-status" class="block mb-2 text-sm font-medium">เปลี่ยนสถานะ</label>
+                        <select id="booking-status" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg block w-full p-2.5">
+                            <option value="Pending">รอตรวจสอบ (Pending)</option>
+                            <option value="Confirmed">ยืนยันแล้ว (Confirmed)</option>
+                            <option value="Checked-in">เช็คอินแล้ว (Checked-in)</option>
+                            <option value="Checked-out">เช็คเอาท์แล้ว (Checked-out)</option>
+                            <option value="Cancelled">ยกเลิก (Cancelled)</option>
+                        </select>
+                    </div>
+                    <div class="flex justify-end space-x-4 pt-4">
+                         <button onclick="closeModal('manageBookingModal')" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">ยกเลิก</button>
+                         <button onclick="updateBookingStatus()" class="bg-amber-500 hover:bg-amber-400 text-gray-900 font-bold py-2 px-4 rounded-lg">บันทึก</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // FIX: Explicitly define the full URL for the backend server.
+    const API_URL = ''; 
+
+    const rooms = [
+        { id: 1, name: 'Deluxe Garden View' },
+        { id: 2, name: 'Ocean Premier Suite' },
+        { id: 3, name: 'Pool Villa' }
+    ];
+
+    document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('admin-email').value;
+        const password = document.getElementById('admin-password').value;
+        const errorDiv = document.getElementById('login-error');
+        errorDiv.classList.add('hidden');
+
+        try {
+            const response = await fetch(`${API_URL}/api/admin/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+
+            localStorage.setItem('adminToken', data.token);
+            showDashboard();
+        } catch (err) {
+            errorDiv.textContent = err.message;
+            errorDiv.classList.remove('hidden');
+        }
+    });
+
+    function adminLogout() {
+        localStorage.removeItem('adminToken');
+        document.getElementById('admin-dashboard').classList.add('hidden');
+        document.getElementById('admin-login-screen').classList.remove('hidden');
+    }
+
+    function checkAdminLogin() {
+        const token = localStorage.getItem('adminToken');
+        if (token) {
+            showDashboard();
+        }
+    }
+    
+    function showDashboard() {
+        document.getElementById('admin-login-screen').classList.add('hidden');
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        feather.replace();
+        loadDashboardData();
+        loadBookings();
+    }
+
+    function switchView(viewName) {
+        document.getElementById('dashboard-view').classList.add('hidden');
+        document.getElementById('bookings-view').classList.add('hidden');
+        document.getElementById(`${viewName}-view`).classList.remove('hidden');
+        
+        const newTitle = viewName.charAt(0).toUpperCase() + viewName.slice(1);
+        document.getElementById('view-title').textContent = newTitle === 'Bookings' ? 'การจองทั้งหมด' : newTitle;
+    }
+    
+    async function fetchData(endpoint) {
+        const token = localStorage.getItem('adminToken');
+        const response = await fetch(`${API_URL}${endpoint}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) {
+            if (response.status === 401) adminLogout();
+            throw new Error('Failed to fetch data');
+        }
+        return response.json();
+    }
+    
+    async function loadDashboardData() {
+        try {
+            const bookings = await fetchData('/api/bookings');
+            
+            const now = new Date();
+            const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+            const todayStr = now.toISOString().split('T')[0];
+
+            const newBookings = bookings.filter(b => new Date(b.booking_date) > oneDayAgo).length;
+            const checkinsToday = bookings.filter(b => b.check_in_date === todayStr).length;
+            const totalBookings = bookings.length;
+            const totalRevenue = bookings.reduce((sum, b) => b.status !== 'Cancelled' ? sum + b.total_price : sum, 0);
+
+            document.getElementById('stat-new-bookings').textContent = newBookings;
+            document.getElementById('stat-checkins-today').textContent = checkinsToday;
+            document.getElementById('stat-total-bookings').textContent = totalBookings;
+            document.getElementById('stat-total-revenue').textContent = `฿${totalRevenue.toLocaleString()}`;
+
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+        }
+    }
+
+    async function loadBookings() {
+        try {
+            const bookings = await fetchData('/api/bookings');
+            const tableBody = document.getElementById('bookings-table-body');
+            tableBody.innerHTML = '';
+            
+            bookings.sort((a, b) => b.id - a.id);
+
+            bookings.forEach(booking => {
+                const roomData = rooms.find(r => r.id == booking.room_id) || { name: 'Unknown Room' };
+                const row = `
+                    <tr class="bg-gray-800 border-b border-gray-700 hover:bg-gray-600">
+                        <td class="px-6 py-4 font-medium whitespace-nowrap text-white">#${booking.id}</td>
+                        <td class="px-6 py-4">${booking.user_email}</td>
+                        <td class="px-6 py-4">${roomData.name}</td>
+                        <td class="px-6 py-4">${booking.check_in_date} to ${booking.check_out_date}</td>
+                        <td class="px-6 py-4">฿${booking.total_price.toLocaleString()}</td>
+                        <td class="px-6 py-4">${getStatusBadge(booking.status || 'Pending')}</td>
+                        <td class="px-6 py-4">
+                            <button onclick='openManageModal(${JSON.stringify(booking)})' class="font-medium text-amber-400 hover:underline">จัดการ</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        } catch (error) {
+            console.error('Error loading bookings:', error);
+        }
+    }
+
+    function getStatusBadge(status) {
+        const colors = {
+            'Pending': 'bg-yellow-900 text-yellow-300',
+            'Confirmed': 'bg-green-900 text-green-300',
+            'Checked-in': 'bg-blue-900 text-blue-300',
+            'Checked-out': 'bg-gray-700 text-gray-300',
+            'Cancelled': 'bg-red-900 text-red-300',
+        };
+        const colorClass = colors[status] || colors['Pending'];
+        return `<span class="text-xs font-medium mr-2 px-2.5 py-0.5 rounded ${colorClass}">${status}</span>`;
+    }
+
+    function openManageModal(booking) {
+        const roomData = rooms.find(r => r.id == booking.room_id) || { name: 'Unknown Room' };
+        document.getElementById('modal-booking-id').textContent = booking.id;
+        document.getElementById('modal-current-booking-id').value = booking.id;
+        document.getElementById('modal-customer-email').textContent = booking.user_email;
+        document.getElementById('modal-room-name').textContent = roomData.name;
+        document.getElementById('modal-dates').textContent = `${booking.check_in_date} to ${booking.check_out_date}`;
+        document.getElementById('booking-status').value = booking.status || 'Pending';
+        openModal('manageBookingModal');
+    }
+    
+    function closeModal(modalId) {
+        document.getElementById(modalId).classList.add('hidden');
+    }
+    
+    function openModal(modalId) {
+        document.getElementById(modalId).classList.remove('hidden');
+        document.getElementById(modalId).classList.add('flex');
+    }
+    
+    async function updateBookingStatus() {
+        const bookingId = document.getElementById('modal-current-booking-id').value;
+        const newStatus = document.getElementById('booking-status').value;
+        const token = localStorage.getItem('adminToken');
+
+        try {
+            const response = await fetch(`${API_URL}/api/bookings/${bookingId}/status`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (!response.ok) throw new Error('Failed to update status');
+
+            closeModal('manageBookingModal');
+            loadBookings(); 
+            loadDashboardData();
+        } catch(error) {
+            console.error("Error updating status:", error);
+            alert("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        checkAdminLogin();
+        // A small UI fix for view titles
+        const originalSwitchView = switchView;
+        switchView = (viewName) => {
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('text-gray-300', 'bg-gray-700/50'));
+            document.querySelectorAll('nav a').forEach(a => a.classList.add('text-gray-400'));
+            const activeLink = document.querySelector(`a[onclick="switchView('${viewName}')"]`);
+            if (activeLink) {
+                activeLink.classList.add('text-gray-300', 'bg-gray-700/50');
+            }
+            originalSwitchView(viewName);
+        };
+    });
+
+</script>
+</body>
+</html>
+
